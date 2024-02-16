@@ -10,6 +10,7 @@ return {
     config = function()
         vim.keymap.set({ 'n', 'x' }, '<leader>tk', require('tasks.command').kill)
         vim.keymap.set({ 'n', 'x' }, '<leader>`', require('tasks.command').toggle)
+        vim.keymap.set({ 'n', 'i', 'x' }, '<A-S-r>', require('tasks.picker').run_task, {})
     end
 }
 ```
