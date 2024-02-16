@@ -1,0 +1,65 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Tests",
+      "type": "shell",
+      "command": "nvim",
+      "options": { "cwd": "${workspaceFolder}" },
+      "args": [
+        "--headless",
+        "--noplugin",
+        "-u",
+        "lua/__test__/config.lua",
+        "-c",
+        "PlenaryBustedDirectory ."
+      ],
+      "linux": {
+        "options": {
+          "env": {
+            "PLENARY_PATH": ""
+          }
+        }
+      },
+      "windows": {
+        "options": {
+          "env": {
+            "PLENARY_PATH": ""
+          }
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "One Test",
+      "type": "shell",
+      "command": "nvim",
+      "options": { "cwd": "${workspaceFolder}" },
+      "args": [
+        "--headless",
+        "--noplugin",
+        "-u",
+        "lua/__test__/config.lua",
+        "-c",
+        "PlenaryBustedFile ./lua/tasks/__test__/string_utils_spec.lua"
+      ],
+      "linux": {
+        "options": {
+          "env": {
+            "PLENARY_PATH": ""
+          }
+        }
+      },
+      "windows": {
+        "options": {
+          "env": {
+            "PLENARY_PATH": ""
+          }
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}
