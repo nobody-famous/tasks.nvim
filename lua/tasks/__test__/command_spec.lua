@@ -28,6 +28,33 @@ describe('Command tests', function()
             nil)
     end)
 
+    it('Options env', function()
+        local value = cmd.from_spec(
+            {
+                label = 'foo',
+                type = 'shell',
+                command = 'bar',
+                options = { env = { foo = '${workspaceFolder}' } },
+            },
+            {
+                loop = { cwd = function() return '/some/path' end },
+                fn = { has = function() return false end },
+            },
+            {
+                substitute = function(s)
+                    if s == '${workspaceFolder}' then
+                        return 'new_value'
+                    end
+
+                    return s
+                end
+            }
+        )
+
+        assert(value.opts.cwd == '/some/path')
+        assert(value.opts.env.foo == 'new_value')
+    end)
+
     describe('Toggle window', function()
         local buf_id = 5
         local win_id = 10
@@ -70,7 +97,11 @@ describe('Command tests', function()
                 end,
                 nvim_win_close = function(id)
                     close_win_id = id
-                end
+                end,
+                nvim_buf_line_count = function()
+                    return 0
+                end,
+                nvim_win_set_cursor = function() end
             }
 
             reset()

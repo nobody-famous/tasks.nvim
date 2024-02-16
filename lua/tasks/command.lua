@@ -15,6 +15,15 @@ function M.from_spec(spec, vim_obj, utils_lib)
         return nil
     end
 
+    local os_spec = M._get_os_spec(spec, vim_obj)
+    if os_spec ~= nil then
+        if not M._validate_os_spec(os_spec) then
+            return nil
+        end
+
+        M._merge_spec(spec, os_spec)
+    end
+
     return {
         cmd = M._create_command(spec, utils_lib),
         opts = M._create_opts(spec, vim_obj, utils_lib)
@@ -38,6 +47,7 @@ function M.run(to_run, vim_obj)
         to_run.cmd,
         {
             cwd = to_run.opts.cwd,
+            env = to_run.opts.env,
             text = true,
             stdout = function(_, data) M._send_data(data, vim_obj) end,
             stderr = function(_, data) M._send_data(data, vim_obj) end,
@@ -74,12 +84,24 @@ function M._create_command(spec, utils_lib)
 end
 
 function M._create_opts(spec, vim_obj, utils_lib)
+    if type(spec.options) ~= 'table' then
+        return {}
+    end
+
     local opts = {}
 
-    if type(spec.options) == 'table' and type(spec.options.cwd) == 'string' then
+    if type(spec.options.cwd) == 'string' then
         opts.cwd = utils_lib.substitute(spec.options.cwd)
     else
-        opts.cmd = vim_obj.loop.cwd()
+        opts.cwd = vim_obj.loop.cwd()
+    end
+
+    if type(spec.options.env) == 'table' then
+        opts.env = {}
+
+        for k, v in pairs(spec.options.env) do
+            opts.env[k] = utils_lib.substitute(v)
+        end
     end
 
     return opts
@@ -100,6 +122,7 @@ function M._show_win(vim_obj)
     M._check_for_term(vim_obj)
     M._check_for_win(vim_obj)
     M._attach_buf(vim_obj)
+    M._jump_to_end(vim_obj)
 end
 
 function M._attach_buf(vim_obj)
@@ -118,6 +141,12 @@ function M._validate_spec(spec)
     return type(spec) == 'table'
         and type(spec.label) == 'string'
         and M._validate_type(spec)
+        and (spec.args == nil or M._validate_args(spec.args))
+        and (spec.options == nil or M._validate_options(spec.options))
+end
+
+function M._validate_os_spec(spec)
+    return type(spec) == 'table'
         and (spec.args == nil or M._validate_args(spec.args))
         and (spec.options == nil or M._validate_options(spec.options))
 end
@@ -160,6 +189,34 @@ function M._validate_env(opts_env)
     return true
 end
 
+function M._get_os_spec(spec, vim_obj)
+    if vim_obj.fn.has('linux') == 1 and spec.linux ~= nil then
+        return spec.linux
+    elseif (vim_obj.fn.has('win32') == 1 or vim_obj.fn.has('win64') == 1) and spec.windows ~= nil then
+        return spec.windows
+    elseif vim_obj.fn.has('osx') == 1 and spec.osx ~= nil then
+        return spec.osx
+    end
+
+    return nil
+end
+
+function M._merge_spec(to, from)
+    if from.options ~= nil then
+        if to.options == nil then
+            to.options = {}
+        end
+
+        for k, v in pairs(from.options) do
+            to.options[k] = v
+        end
+    end
+
+    if from.args ~= nil then
+        to.args = from.args
+    end
+end
+
 function M._send_data(data, vim_obj)
     if data == nil then
         return
@@ -169,6 +226,11 @@ function M._send_data(data, vim_obj)
         vim_obj.api.nvim_chan_send(M._term_id, data)
     end
     )
+end
+
+function M._jump_to_end(vim_obj)
+    local count = vim_obj.api.nvim_buf_line_count(M._buf_id)
+    vim_obj.api.nvim_win_set_cursor(M._win_id, { count, 1 })
 end
 
 function M._check_for_buf(vim_obj)
