@@ -23,6 +23,10 @@ function M.run_task(tasks_lib, cmd_lib, pickers_lib, finders_lib, conf_lib)
 
     local task_items = tasks_lib.get_tasks()
 
+    if task_items == nil then
+        return
+    end
+
     M._populate_map(task_items)
     M._update_labels(task_items)
 
